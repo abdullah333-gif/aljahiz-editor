@@ -39,9 +39,39 @@ SYSTEM_PROMPT = """أنت "محرر البيان الذكي"، مساعد ذكي
 - **الدرة البلاغية:** [سطر واحد يشرح الشاهد أو القاعدة البلاغية]
 ---"""
 
+def generate_with_fallback(client, prompt_text):
+    # قائمة أسماء النماذج المتاحة بالتسلسل
+    model_candidates = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    
+    # 1. التجربة الأولى: اختيار أول نموذج يعمل من القائمة مباشرة
+    for m in model_candidates:
+        try:
+            res = client.models.generate_content(model=m, contents=prompt_text)
+            if res and res.text:
+                return res.text
+        except Exception:
+            continue
+            
+    # 2. التجربة الثانية: البحث التلقائي عن أي نموذج يعمل في مفتاح المستخدم
+    try:
+        available_models = client.models.list()
+        for model_info in available_models:
+            model_id = getattr(model_info, 'name', '') or str(model_info)
+            if "gemini" in model_id.lower():
+                try:
+                    res = client.models.generate_content(model=model_id, contents=prompt_text)
+                    if res and res.text:
+                        return res.text
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    raise Exception("لم نتمكن من الوصول لنماذج Gemini المتاحة، يرجى التأكد من صحة المفتاح المُدخل.")
+
 if st.button("صياغة البيان ✨", use_container_width=True):
     if not api_key:
-        st.error("يرجى إدخال مفتاح Gemini API في الشريط الجانبي للاستمرار.")
+        st.error("يرجى إدخل مفتاح Gemini API في الشريط الجانبي للاستمرار.")
     elif not user_text.strip():
         st.warning("يرجى إدخال نص لصياغته.")
     else:
@@ -49,11 +79,8 @@ if st.button("صياغة البيان ✨", use_container_width=True):
             client = genai.Client(api_key=api_key)
             with st.spinner("جاري تحليل النص وإعادة صياغته بأسلوب البيان..."):
                 full_prompt = f"{SYSTEM_PROMPT}\n\nالنص المدخل من المستخدم:\n{user_text}"
-                response = client.models.generate_content(
-                    model="gemini-3.6-flash",
-                    contents=full_prompt,
-                )
+                output_text = generate_with_fallback(client, full_prompt)
                 st.markdown("---")
-                st.markdown(response.text)
+                st.markdown(output_text)
         except Exception as e:
             st.error(f"حدث خطأ أثناء معالجة الطلب: {e}")
