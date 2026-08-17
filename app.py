@@ -41,7 +41,7 @@ SYSTEM_PROMPT = """أنت "محرر البيان الذكي"، مساعد ذكي
 
 if st.button("صياغة البيان ✨", use_container_width=True):
     if not api_key:
-        st.error("يرجى إدخل مفتاح Gemini API في الشريط الجانبي للاستمرار.")
+        st.error("يرجى إدخال مفتاح Gemini API في الشريط الجانبي للاستمرار.")
     elif not user_text.strip():
         st.warning("يرجى إدخال نص لصياغته.")
     else:
@@ -50,7 +50,7 @@ if st.button("صياغة البيان ✨", use_container_width=True):
             with st.spinner("جاري تحليل النص وإعادة صياغته بأسلوب البيان..."):
                 full_prompt = f"{SYSTEM_PROMPT}\n\nالنص المدخل من المستخدم:\n{user_text}"
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.6-flash",
                     contents=full_prompt,
                 )
                 st.markdown("---")
