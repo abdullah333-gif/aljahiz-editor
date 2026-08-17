@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 st.set_page_config(page_title="محرر البيان الذكي", page_icon="🖋️", layout="centered")
 
@@ -41,19 +41,19 @@ SYSTEM_PROMPT = """أنت "محرر البيان الذكي"، مساعد ذكي
 
 if st.button("صياغة البيان ✨", use_container_width=True):
     if not api_key:
-        st.error("يرجى إدخال مفتاح Gemini API في الشريط الجانبي للاستمرار.")
+        st.error("يرجى إدخل مفتاح Gemini API في الشريط الجانبي للاستمرار.")
     elif not user_text.strip():
         st.warning("يرجى إدخال نص لصياغته.")
     else:
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash-latest")
-            
+            client = genai.Client(api_key=api_key)
             with st.spinner("جاري تحليل النص وإعادة صياغته بأسلوب البيان..."):
                 full_prompt = f"{SYSTEM_PROMPT}\n\nالنص المدخل من المستخدم:\n{user_text}"
-                response = model.generate_content(full_prompt)
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=full_prompt,
+                )
                 st.markdown("---")
                 st.markdown(response.text)
         except Exception as e:
             st.error(f"حدث خطأ أثناء معالجة الطلب: {e}")
-          
